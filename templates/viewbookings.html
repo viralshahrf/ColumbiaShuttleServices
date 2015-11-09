@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ViewBookings</title>
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    <script>
+      var socket;
+      $(document).ready(function() {
+        namespace = '/'; // change to an empty string to use the global namespace
+        socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+
+        socket.on('foundbooking', function(msg) {
+          displayResult(msg);
+        });
+      });
+
+      function findBookingWithUni() {
+        socket.emit('findbooking', {bookingid: document.getElementById('uni').value});
+      };
+
+      function displayResult(msg) {
+        var Div = document.getElementById('results');
+
+        var cl = Div.childNodes.length;
+        for (c = cl; c > 0; c--) {
+          Div.removeChild(Div.childNodes[c-1]);
+        }
+
+        var fs = document.createElement("FIELDSET");
+        var l = document.createElement("LEGEND");
+        l.appendChild(document.createTextNode("Booking Result"));
+        fs.appendChild(l);
+        var table = document.createElement('TABLE');
+        table.border='1';
+
+        var tableBody = document.createElement('TBODY');
+        table.appendChild(tableBody);
+
+        var tr1 = document.createElement('TR');
+        tableBody.appendChild(tr1);
+
+        tableElementNames = ["Booking ID", "UNI", "Schedule Number", "Source Station", "Destination Station"];
+        tableElementSizes = [100, 75, 150, 150, 175];
+
+        for (i = 0; i <= 4; i++) {
+          var td = document.createElement('TD');
+          td.width=tableElementSizes[i];
+          td.appendChild(document.createTextNode(tableElementNames[i]));
+          tr1.appendChild(td);
+        }
+
+        var tr2 = document.createElement('TR');
+        tableBody.appendChild(tr2);
+
+        for (i = 0; i <= 4; i++) {
+          var td = document.createElement('TD');
+          td.width=tableElementSizes[i];
+          td.appendChild(document.createTextNode(msg.booking[i]));
+          tr2.appendChild(td);
+        }
+
+        fs.appendChild(table);
+        Div.appendChild(fs);
+      }
+    </script>
+  </head>
+  <body>
+    <div>
+      <h1 style="text-align:center">View Bookings</h1>
+      <form id="getuni" method="post">
+        <fieldset>
+          <legend>Booking ID</legend>
+          <pre>
+            Please enter your booking id:
+            <input type="text" id="uni">
+            <input type="button" id="submit" value="Get Booking" onclick="findBookingWithUni()">
+          </pre>
+        </fieldset>
+      </form>
+    </div>
+    <div id="results">
+    </div>
+  </body>
+</html>
