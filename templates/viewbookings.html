@@ -20,48 +20,67 @@
       };
 
       function displayResult(msg) {
-        var Div = document.getElementById('results');
+        if (msg.booking) {
+          var Div = document.getElementById('results');
 
-        var cl = Div.childNodes.length;
-        for (c = cl; c > 0; c--) {
-          Div.removeChild(Div.childNodes[c-1]);
+          var cl = Div.childNodes.length;
+          for (c = cl; c > 0; c--) {
+            Div.removeChild(Div.childNodes[c-1]);
+          }
+
+          var fs = document.createElement("FIELDSET");
+          var l = document.createElement("LEGEND");
+          l.appendChild(document.createTextNode("Booking Result"));
+          fs.appendChild(l);
+          var table = document.createElement('TABLE');
+          table.border='1';
+
+          var tableBody = document.createElement('TBODY');
+          table.appendChild(tableBody);
+
+          var tr1 = document.createElement('TR');
+          tableBody.appendChild(tr1);
+
+          tableElementNames = ["Booking ID", "UNI", "Schedule Number", "Source Station", "Destination Station"];
+          tableElementSizes = [100, 75, 150, 150, 175];
+
+          for (i = 0; i <= 4; i++) {
+            var td = document.createElement('TD');
+            td.width=tableElementSizes[i];
+            td.appendChild(document.createTextNode(tableElementNames[i]));
+            tr1.appendChild(td);
+          }
+
+          var tr2 = document.createElement('TR');
+          tableBody.appendChild(tr2);
+
+          for (i = 0; i <= 4; i++) {
+            var td = document.createElement('TD');
+            td.width=tableElementSizes[i];
+            td.appendChild(document.createTextNode(msg.booking[i]));
+            tr2.appendChild(td);
+          }
+
+          fs.appendChild(table);
+          Div.appendChild(fs);
         }
+        else {
+          console.log("Here");
+          var Div = document.getElementById('results');
 
-        var fs = document.createElement("FIELDSET");
-        var l = document.createElement("LEGEND");
-        l.appendChild(document.createTextNode("Booking Result"));
-        fs.appendChild(l);
-        var table = document.createElement('TABLE');
-        table.border='1';
+          var cl = Div.childNodes.length;
+          for (c = cl; c > 0; c--) {
+            Div.removeChild(Div.childNodes[c-1]);
+          }
 
-        var tableBody = document.createElement('TBODY');
-        table.appendChild(tableBody);
+          var fs = document.createElement("FIELDSET");
+          var l = document.createElement("LEGEND");
+          l.appendChild(document.createTextNode("Booking Result"));
+          fs.appendChild(l);
 
-        var tr1 = document.createElement('TR');
-        tableBody.appendChild(tr1);
-
-        tableElementNames = ["Booking ID", "UNI", "Schedule Number", "Source Station", "Destination Station"];
-        tableElementSizes = [100, 75, 150, 150, 175];
-
-        for (i = 0; i <= 4; i++) {
-          var td = document.createElement('TD');
-          td.width=tableElementSizes[i];
-          td.appendChild(document.createTextNode(tableElementNames[i]));
-          tr1.appendChild(td);
+          fs.appendChild(document.createTextNode("No Boooking exists under the entered Booking ID"));
+          Div.appendChild(fs);
         }
-
-        var tr2 = document.createElement('TR');
-        tableBody.appendChild(tr2);
-
-        for (i = 0; i <= 4; i++) {
-          var td = document.createElement('TD');
-          td.width=tableElementSizes[i];
-          td.appendChild(document.createTextNode(msg.booking[i]));
-          tr2.appendChild(td);
-        }
-
-        fs.appendChild(table);
-        Div.appendChild(fs);
       }
     </script>
   </head>
