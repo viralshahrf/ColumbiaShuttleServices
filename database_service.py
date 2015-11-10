@@ -67,7 +67,11 @@ def findSchedule(message):
     dest_id = int(message['dest_rownum'])
     global dest
     dest = dest_list[dest_id]
-    socketio.emit('foundSchedule', {'schedule_list': get_schedule(cursor, dest[0], dest[1])})
+    schedule_list = get_schedule(cursor, dest[0], dest[1])
+    if schedule_list:
+        socketio.emit('foundSchedule', {'schedule_list': schedule_list})
+    else:
+        socketio.emit('foundError', {'error': 'Error Occcured. Please try again !'})
         
 if __name__ == '__main__':
     socketio.run(app)

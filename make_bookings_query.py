@@ -16,4 +16,6 @@ def get_schedule(cursor, source_stop, dest_stop):
     findScQuery = "select S.line, src.schedule_no, S.street, S.avenue, src.time, timediff(dst.time,src.time) as JourneyTime from Schedule src, Schedule dst, Stations S where S.line = (select line from Stations where stop_id=\"" + dest_stop + "\") and (src.stop_id = S.stop_id) and (dst.stop_id = \"" + dest_stop + "\") and (src.stop_id = \"" + source_stop + "\") and (src.schedule_no = dst.schedule_no) and timediff(dst.time, src.time) > time(000000)" 
     print findScQuery
     cursor.execute(findScQuery)
-    return cursor.fetchall()
+    data = cursor.fetchall()
+    print data
+    return [[str(i) for i in j] for j in data]
