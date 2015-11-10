@@ -4,6 +4,7 @@ import sys
 from flask import Flask, render_template
 from flask.ext.mysql import MySQL
 from flask.ext.socketio import SocketIO, emit
+from make_bookings_query import *
 
 app = Flask('ColumbiaShuttleServices')
 app.config['DEBUG'] = True
@@ -20,6 +21,10 @@ mysql = MySQL()
 mysql.init_app(app)
 conn = mysql.connect()
 cursor = conn.cursor()
+
+source = []
+dest_list = []
+dest = []
 
 @app.route('/index')
 def index():
@@ -48,29 +53,21 @@ def findDest(message):
     bname = message['source_bname']
     street = message['source_st']
     avenue = message['source_ave']
-    print bname
-    bname_clause = ''
-    avenue_clause = ''
+    global source
+    source = [bname, street, avenue]
     if street == '':
         socketio.emit('foundError', {'error': 'Street Number is a required field'})
     else:
-        if bname:
-            bname_clause = " \
-             and Route.source_stop = ANY (select stop_id from ClosestStop where building_id = (Select building_id from Buildings where building_name like \"%" + bname + "%\")) \
-            " 
-        if avenue:
-            avenue_clause = " and (avenue like \"%" + avenue + "%\")"
-        
-        findDestQuery = "Select Route.line, source_stop, dest_stop, S.street, S.avenue, Distance from Route, Stations S \
-        where source_stop = ANY(select stop_id from Stations where Street = \"" + street + "\"" \
-                             + avenue_clause + ")" \
-           + "and S.stop_id = dest_stop" + bname_clause
-        cursor.execute(findDestQuery)
-        col = [desc[0] for desc in cursor.description]
-        data = cursor.fetchall()
-        data_to_send = [[str(i) for i in j] for j in data]
-        socketio.emit('foundDest', {'dest_list': data_to_send})
-        
+        global dest_list
+        dest_list = get_dest(cursor, bname, street, avenue)
+        socketio.emit('foundDest', {'dest_list': dest_list})
 
+@socketio.on('findSchedule')
+def findSchedule(message):
+    dest_id = int(message['dest_rownum'])
+    global dest
+    dest = dest_list[dest_id]
+    socketio.emit('foundSchedule', {'schedule_list': get_schedule(cursor, dest[0], dest[1])})
+        
 if __name__ == '__main__':
     socketio.run(app)

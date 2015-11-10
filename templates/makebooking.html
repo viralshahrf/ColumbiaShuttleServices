@@ -11,13 +11,22 @@
         socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
 
         socket.on('foundDest', function(msg) {
-          displayResult(msg);
+          displayDest(msg);
         });
+        
+        socket.on('foundSchedule', function(msg) {
+          displaySchedule(msg);
+        });
+
 		socket.on('foundError', function(msg) {
 		  displayError(msg);
 		});
       });
+
       function findSchedules() {
+        var l = document.getElementById("destList"); 
+        window.alert(l.selectedIndex);
+        socket.emit('findSchedule', {dest_rownum: l.options[l.selectedIndex].value});
       }
 
       function findReachableDest() {
@@ -27,19 +36,17 @@
 								 source_ave: document.getElementById('source_ave').value});
       }
 
-      function displayResult(msg) {
+      function displayDest(msg) {
         var dests = msg.dest_list;
         var col_names;
-        /*for (i = 0; i < dests.length; i++)
-        {
-            for (j = 0; j < dests[i].length; j++)
-                document.write(dests[i][j]);
-        }
-        */
         
-        var Div = document.getElementById("results");
+        var Div = document.getElementById("destinations");
+        while (Div.firstChild) {
+            Div.removeChild(Div.firstChild);
+        }
+
         var destForm = document.createElement("FORM");
-        destForm.setAttribute("method","post");
+        destForm.setAttribute("method","POST");
         destForm.setAttribute("id","getdest");      
         
         var fs = document.createElement("FIELDSET");
@@ -49,20 +56,23 @@
         
         
         var destSelect = document.createElement("SELECT");
+        destSelect.id = "destList";
         destSelect.name = "destList";
+        destSelect.style.marginRight = "20px";
         for (i = 0; i < dests.length; i++)
         {
             var destInput = document.createElement("OPTION");
-            destInput.value = dests[i][3];
-            destInput.textContent = "".concat("( ", dests[i][3], "th Street, ", dests[i][4], " Avenue )");
+            destInput.value = i;
+            destInput.textContent = "".concat("( ", dests[i][2], "th Street, ", dests[i][3], " Avenue )");
             destSelect.appendChild(destInput);
         }
         destForm.appendChild(destSelect);
         
         var destSubmit = document.createElement("input");
-        destSubmit.type = "SUBMIT";
+        destSubmit.type = "Button";
+        destSubmit.style.marginLeft = "50px";
         destSubmit.value = "Get Schedules";
-        destSubmit.onclick="findSchedules()";
+        destSubmit.onclick= findSchedules;
         
         destForm.appendChild(destSubmit);
         
@@ -72,13 +82,22 @@
       }
 
 	  function displayError(msg) {
-		var Div = document.getElementById('results');
-		var fs = document.createElement("FIELDSET");
+		var Div = document.getElementById('destinations');
+		while (Div.firstChild) {
+            Div.removeChild(Div.firstChild);
+        }
+        var fs = document.createElement("FIELDSET");
 		var l = document.createElement("LEGEND");
-		l.appendChild(document.createTextNode(msg.error));
+		l.appendChild(document.createTextNode("Error"));
 		fs.appendChild(l);
+        fs.appendChild(document.createTextNode(msg.error));
+
 		Div.appendChild(fs);
-	  }
+      }
+      
+      function displaySchedule(msg) {
+      }
+      
     </script>
   </head>
   <body>
@@ -87,14 +106,18 @@
       <form id="getsource" method="post">
         <fieldset>
           <legend>From</legend>
-          <pre>Building: <input type="text" id="source_bname"> </pre>
-		  <pre>Street:   <input type="text" id="source_st"> </pre>
-		  <pre>Avenue: <input type="text" id="source_ave"> </pre>
+          <pre>Building <input type="text" id="source_bname"> </pre>
+		  <pre>Street   <input type="text" id="source_st"> </pre>
+		  <pre>Avenue   <input type="text" id="source_ave"> </pre>
           <input type="button" id="submit" value="Get Destinations" onclick="findReachableDest()">
         </fieldset>
       </form>
     </div>
     <div id="results">
+      <div id="destinations">
+      </div>
+      <div id="schedule">
+      </div>
     </div>
   </body>
 </html>
