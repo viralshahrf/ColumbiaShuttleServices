@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>MakeBooking</title>
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+    <script>
+      var socket;
+      $(document).ready(function() {
+        namespace = '/'; // change to an empty string to use the global namespace
+        socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+
+        socket.on('foundDest', function(msg) {
+          displayResult(msg);
+        });
+		socket.on('foundError', function(msg) {
+		  displayError(msg);
+		});
+      });
+      function findSchedules() {
+      }
+
+      function findReachableDest() {
+        socket.emit('findDest', {
+								 source_bname: document.getElementById('source_bname').value,
+								 source_st: document.getElementById('source_st').value,
+								 source_ave: document.getElementById('source_ave').value});
+      }
+
+      function displayResult(msg) {
+        var dests = msg.dest_list;
+        var col_names;
+        /*for (i = 0; i < dests.length; i++)
+        {
+            for (j = 0; j < dests[i].length; j++)
+                document.write(dests[i][j]);
+        }
+        */
+        
+        var Div = document.getElementById("results");
+        var destForm = document.createElement("FORM");
+        destForm.setAttribute("method","post");
+        destForm.setAttribute("id","getdest");      
+        
+        var fs = document.createElement("FIELDSET");
+		var l = document.createElement("LEGEND");
+		l.appendChild(document.createTextNode("To"));
+		fs.appendChild(l);
+        
+        
+        var destSelect = document.createElement("SELECT");
+        destSelect.name = "destList";
+        for (i = 0; i < dests.length; i++)
+        {
+            var destInput = document.createElement("OPTION");
+            destInput.value = dests[i][3];
+            destInput.textContent = "".concat("( ", dests[i][3], "th Street, ", dests[i][4], " Avenue )");
+            destSelect.appendChild(destInput);
+        }
+        destForm.appendChild(destSelect);
+        
+        var destSubmit = document.createElement("input");
+        destSubmit.type = "SUBMIT";
+        destSubmit.value = "Get Schedules";
+        destSubmit.onclick="findSchedules()";
+        
+        destForm.appendChild(destSubmit);
+        
+        fs.appendChild(destForm);
+        Div.appendChild(fs);
+        //Div.appendChild(destForm);
+      }
+
+	  function displayError(msg) {
+		var Div = document.getElementById('results');
+		var fs = document.createElement("FIELDSET");
+		var l = document.createElement("LEGEND");
+		l.appendChild(document.createTextNode(msg.error));
+		fs.appendChild(l);
+		Div.appendChild(fs);
+	  }
+    </script>
+  </head>
+  <body>
+    <div>
+      <h1 style="text-align:center">Make Bookings</h1>
+      <form id="getsource" method="post">
+        <fieldset>
+          <legend>From</legend>
+          <pre>Building: <input type="text" id="source_bname"> </pre>
+		  <pre>Street:   <input type="text" id="source_st"> </pre>
+		  <pre>Avenue: <input type="text" id="source_ave"> </pre>
+          <input type="button" id="submit" value="Get Destinations" onclick="findReachableDest()">
+        </fieldset>
+      </form>
+    </div>
+    <div id="results">
+    </div>
+  </body>
+</html>

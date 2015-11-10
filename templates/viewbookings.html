@@ -14,7 +14,7 @@
           displayResult(msg);
         });
       });
-
+      
       function findBookingWithUni() {
         socket.emit('findbooking', {bookingid: document.getElementById('uni').value});
       };
