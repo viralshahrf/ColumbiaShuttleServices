@@ -24,7 +24,9 @@
       });
 
       function logBooking() {
-        
+        var schedule_id = document.querySelector('input[name="selectSchedule"]:checked').value;
+        var uni = document.getElementById('uni').value;
+        socket.emit('logBooking', {schedule_id: schedule_id, uni: uni});
       }
 
       function findSchedules() {
@@ -84,13 +86,13 @@
       }
 
 	  function displayError(msg) {
-		var Div = document.getElementById('destinations');
+		var Div = document.getElementById(msg.div);
 		while (Div.firstChild) {
             Div.removeChild(Div.firstChild);
         }
         var fs = document.createElement("FIELDSET");
 		var l = document.createElement("LEGEND");
-		l.appendChild(document.createTextNode("Error"));
+		l.appendChild(document.createTextNode("Message"));
 		fs.appendChild(l);
         fs.appendChild(document.createTextNode(msg.error));
 
@@ -114,6 +116,8 @@
 		fs.appendChild(l);
         
         var table = document.createElement('TABLE');
+        table.border = 1;
+        table.style.borderCollapse = "collapse";
         var tableBody = document.createElement('TBODY');
         table.appendChild(tableBody);
 
@@ -123,7 +127,7 @@
         for (i = 0; i < schedule_cols.length; i++)
         {
             var th = document.createElement('TH');
-            th.style.padding = "10px";
+            th.style.padding = "5px";
             th.style.textAlign = "center";
             th.appendChild(document.createTextNode(schedule_cols[i]));
             tr.appendChild(th);
@@ -143,7 +147,7 @@
             var tr = document.createElement('TR');
             tableBody.appendChild(tr);
             var td = document.createElement('TD');
-            td.style.padding = "10px";
+            td.style.padding = "5px";
             td.style.textAlign = "center";
             td.appendChild(option);
             tr.appendChild(td);
@@ -152,23 +156,28 @@
             {
                 var td = document.createElement('TD');
                 td.appendChild(document.createTextNode(schedules[i][j]));
-                td.style.padding = "10px";
+                td.style.textAlign = "center";
+                td.style.padding = "5px";
                 tr.appendChild(td);
             }
         }    
         scheduleForm.appendChild(table);
+        var uniInput = document.createElement("input");
+        uniInput.type = "Input";
+        uniInput.id = "uni";
+        uniInput.style.marginRight = "20px";
+        scheduleForm.appendChild(uniInput);
         
         var scheduleSubmit = document.createElement("input");
         scheduleSubmit.type = "Button";
         //scheduleSubmit.style.marginLeft = "50px";
-        scheduleSubmit.value = "Book";
+        scheduleSubmit.value = "Enter your UNI and Book !";
         scheduleSubmit.onclick= logBooking;
 
         scheduleForm.appendChild(scheduleSubmit);
         fs.appendChild(scheduleForm);
 
         Div.appendChild(fs);
-        
       }
       
     </script>
@@ -186,10 +195,15 @@
         </fieldset>
       </form>
     </div>
+    <br>
     <div id="results">
       <div id="destinations">
       </div>
+      <br>
       <div id="schedule">
+      </div>
+      <br>
+      <div id="success">
       </div>
     </div>
   </body>

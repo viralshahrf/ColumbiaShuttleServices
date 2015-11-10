@@ -25,6 +25,8 @@ cursor = conn.cursor()
 source = []
 dest_list = []
 dest = []
+schedule_list = []
+bookingFlag = 0
 
 @app.route('/index')
 def index():
@@ -46,7 +48,9 @@ def findbooking(message):
 
 @app.route('/makebooking')
 def makebookings():
-	return render_template('makebooking.html')	
+    global bookingFlag
+    bookingFlag = 0
+    return render_template('makebooking.html')	
 
 @socketio.on('findDest')
 def findDest(message):
@@ -56,22 +60,46 @@ def findDest(message):
     global source
     source = [bname, street, avenue]
     if street == '':
-        socketio.emit('foundError', {'error': 'Street Number is a required field'})
+        socketio.emit('foundError', {'error': 'Street Number is a required field', 'div':'destinations'})
     else:
         global dest_list
         dest_list = get_dest(cursor, bname, street, avenue)
-        socketio.emit('foundDest', {'dest_list': dest_list})
+        if dest_list:
+            socketio.emit('foundDest', {'dest_list': dest_list, 'div':'destinations'})
+        else:
+            socketio.emit('foundError', {'error':'Invalid combination. No destinations found !', 'div':'destinations'})
 
 @socketio.on('findSchedule')
 def findSchedule(message):
     dest_id = int(message['dest_rownum'])
     global dest
     dest = dest_list[dest_id]
+    global schedule_list
     schedule_list = get_schedule(cursor, dest[0], dest[1])
     if schedule_list:
         socketio.emit('foundSchedule', {'schedule_list': schedule_list})
     else:
-        socketio.emit('foundError', {'error': 'Error Occcured. Please try again !'})
+        socketio.emit('foundError', {'error': 'Error Occcured. Please try again !', 'div':'schedule'})
+
+@socketio.on('logBooking')
+def logBooking(message):
+    global bookingFlag
+    if bookingFlag == 1:
+        socketio.emit('foundError', {'error': 'You cannot do multiple bookings! Refresh the page for a new booking.', 'div':'success'})
+        return
+    schedule_id = int(message['schedule_id'])
+    uni = message['uni']
+    print uni
+    retstat = registerBooking(cursor, uni, schedule_list[schedule_id], dest)
+    print retstat
+    if retstat[1] == 1:
+        conn.commit()
+        bookingFlag = 1
+        socketio.emit('foundError', {'error': 'Booking Confirmed', 'div':'success'})
+    elif retstat[1] == -1:
+        socketio.emit('foundError', {'error': 'Please specify a valid UNI', 'div':'success'})
+    else:
+        socketio.emit('foundError', {'error': 'Please try booking again', 'div':'success'})
         
 if __name__ == '__main__':
     socketio.run(app)

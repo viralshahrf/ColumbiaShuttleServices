@@ -19,3 +19,17 @@ def get_schedule(cursor, source_stop, dest_stop):
     data = cursor.fetchall()
     print data
     return [[str(i) for i in j] for j in data]
+
+def registerBooking(cursor, uni, schedule, dest):
+    cursor.execute("select 1 from Members where uni = \"" + uni + "\"")
+    result =  cursor.fetchall()
+    if len(result) <= 0:
+        return [result, -1]
+    if int(result[0][0]) != 1:
+        return [int(result[0][0]), -1]
+    cursor.execute("select max(booking_id) from BookingHistory")
+    curBookingID = int(cursor.fetchone()[0]) + 1
+    insertQuery = "insert into BookingHistory values(" + str(curBookingID) + ", now(), \"" + uni + "\", " + schedule[1] + ", \"" + dest[0] + "\", \"" + dest[1] + "\")"
+    rowcnt = cursor.execute(insertQuery)
+    print "rowcnt = ", rowcnt
+    return [rowcnt, 1]
