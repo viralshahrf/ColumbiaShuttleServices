@@ -43,7 +43,7 @@
 
       function displayDest(msg) {
         var dests = msg.dest_list;
-        
+        cleanDiv("message");  
         var Div = document.getElementById("destinations");
         while (Div.firstChild) {
             Div.removeChild(Div.firstChild);
@@ -67,7 +67,7 @@
         {
             var destInput = document.createElement("OPTION");
             destInput.value = i;
-            destInput.textContent = "".concat("( ", dests[i][2], "th Street, ", dests[i][3], " Avenue )");
+            destInput.textContent = "".concat("( ", dests[i][0], "th Street, ", dests[i][1], " Avenue )");
             destSelect.appendChild(destInput);
         }
         destForm.appendChild(destSelect);
@@ -85,11 +85,17 @@
         //Div.appendChild(destForm);
       }
 
-	  function displayError(msg) {
-		var Div = document.getElementById(msg.div);
-		while (Div.firstChild) {
-            Div.removeChild(Div.firstChild);
+	  function displayError(msg) 
+      {
+		var next = document.getElementById(msg.div);
+		while (next.nextSibling) 
+        {
+            while(next.firstChild)
+                next.removeChild(next.firstChild);
+            next = next.nextSibling;
         }
+   
+		var Div = document.getElementById("message");
         var fs = document.createElement("FIELDSET");
 		var l = document.createElement("LEGEND");
 		l.appendChild(document.createTextNode("Message"));
@@ -98,8 +104,15 @@
 
 		Div.appendChild(fs);
       }
+
+      function cleanDiv(Div) {
+        var div = document.getElementById(Div);
+        while(div.firstChild)
+            div.removeChild(div.firstChild);
+      }
       
       function displaySchedule(msg) {
+        cleanDiv("message");  
         var schedules = msg.schedule_list;
         var Div = document.getElementById("schedule");
         while (Div.firstChild) {
@@ -121,7 +134,7 @@
         var tableBody = document.createElement('TBODY');
         table.appendChild(tableBody);
 
-        var schedule_cols = [' ','Line', 'Schedule', 'Street', 'Avenue', 'Departure Time', 'Journey Time']
+        var schedule_cols = [' ','Line', 'Station ID', 'Destination ID', 'Schedule', 'Street', 'Avenue', 'Departure Time', 'Journey Time']
         var tr = document.createElement('TR');
         tableBody.appendChild(tr);
         for (i = 0; i < schedule_cols.length; i++)
@@ -203,7 +216,7 @@
       <div id="schedule">
       </div>
       <br>
-      <div id="success">
+      <div id="message">
       </div>
     </div>
   </body>
