@@ -4,7 +4,7 @@ import sys
 from flask import Flask, render_template
 from flask.ext.mysql import MySQL
 from flask.ext.socketio import SocketIO, emit
-from make_bookings_query import *
+from queries import *
 
 app = Flask('ColumbiaShuttleServices')
 app.config['DEBUG'] = True
@@ -39,18 +39,14 @@ def viewbookings():
 @socketio.on('findbooking')
 def findbooking(message):
     bookingid = message['bookingid']
-    print "bookingid = ", bookingid
-    booking_query = 'SELECT booking_id, uni, schedule_no, source_station, dest_station FROM BookingHistory WHERE Booking_id="' + bookingid + '"'
-    cursor.execute(booking_query)
-    data = cursor.fetchone()
+    data = get_booking(cursor, bookingid)
     socketio.emit('foundbooking', {'booking': data})
-    #socketio.emit('foundbooking', {'BID': data[0], 'UNI': data[1], 'SNO': data[2], 'SS': data[3], 'DS': data[4]}) 
 
-@app.route('/makebooking')
+@app.route('/makebookings')
 def makebookings():
     global bookingFlag
     bookingFlag = 0
-    return render_template('makebooking.html')	
+    return render_template('makebookings.html')
 
 @socketio.on('findDest')
 def findDest(message):
