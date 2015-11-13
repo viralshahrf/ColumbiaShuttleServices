@@ -4,7 +4,7 @@ import sys
 from flask import Flask, render_template
 from flask.ext.mysql import MySQL
 from flask.ext.socketio import SocketIO, emit
-from queries import make_bookings
+from queries import make_bookings, view_bookings
 
 app = Flask('ColumbiaShuttleServices')
 app.config['DEBUG'] = True
@@ -29,6 +29,10 @@ def index():
 @app.route('/viewbookings')
 def viewbookings():
     return render_template('viewbookings.html')
+
+@app.route('/updateschedule')
+def updateschedule():
+    return render_template('updateschedule.html')
 
 @socketio.on('findbooking')
 def findbooking(message):

@@ -1,11 +1,12 @@
-class make_bookings:
-    def __init__(self):
-        findDestWhereClause = ""
-
+class view_bookings:
     def get_booking(self, cursor, bookingid):
         booking_query = 'SELECT booking_id, uni, schedule_no, source_station, dest_station FROM BookingHistory WHERE Booking_id="' + bookingid + '"'
         cursor.execute(booking_query)
         return cursor.fetchone()
+
+class make_bookings:
+    def __init__(self):
+        findDestWhereClause = ""
 
     def get_dest(self, cursor, bname, street, avenue):
         bname_clause = " "
@@ -46,7 +47,4 @@ class make_bookings:
             return [curBookingID, 1]
         else:
             return [rowcnt, 0]
-
-if __name__ == '__main__':
-    pass
 

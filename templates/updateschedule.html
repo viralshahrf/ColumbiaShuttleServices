@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Update Schedule</title>
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    <script>
+      var socket;
+      $(document).ready(function() {
+        namespace = '/'; // change to an empty string to use the global namespace
+        socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+
+        socket.on('userauthentication', function(msg) {
+        });
+      });
+
+      function findUNIAuthorization() {
+        socket.emit('uniauthorization', {uni: document.getElementById('uni').value});
+      };
+    </script>
+  </head>
+  <body>
+    <div>
+      <h1 style="text-align:center">Update Schedule</h1>
+      <form id="getuni" method="post">
+        <fieldset>
+          <legend>Enter UNI</legend>
+          <pre>
+            Please enter your UNI:
+            <input type="text" id="uni">
+            <input type="button" value="Authorize UNI" onclick="findUNIAuthorization()">
+          </pre>
+        </fieldset>
+      </form>
+    </div>
+    <div id="results">
+    </div>
+  </body>
+</html>
+
