@@ -3,13 +3,12 @@
   <head>
     <title>MakeBooking</title>
     <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
     <script>
       var socket;
       $(document).ready(function() {
         namespace = '/'; // change to an empty string to use the global namespace
         socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
-
         socket.on('foundDest', function(msg) {
           displayDest(msg);
         });
@@ -23,6 +22,19 @@
 		});
       });
 
+      function populateBuildings() {
+        window.alert("5");
+        var bnames = {{ building_list | safe }};
+        var elem = document.getElementById('listBuildings');
+        for (i = 0; i < bnames.length; i++)
+        {
+          var opt = document.createElement("OPTION");
+          opt.value = bnames[i];
+          opt.text = bnames[i];
+          elem.appendChild(opt);
+        }
+      }
+
       function logBooking() {
         var schedule_id = document.querySelector('input[name="selectSchedule"]:checked').value;
         var uni = document.getElementById('uni').value;
@@ -35,8 +47,10 @@
       }
 
       function findReachableDest() {
+        var elem = document.getElementById('listBuildings');
+        var bname = elem.options[elem.selectedIndex].value;
         socket.emit('findDest', {
-								 source_bname: document.getElementById('source_bname').value,
+								 source_bname: bname,
 								 source_st: document.getElementById('source_st').value,
 								 source_ave: document.getElementById('source_ave').value});
       }
@@ -195,13 +209,13 @@
       
     </script>
   </head>
-  <body>
+  <body onload ="populateBuildings();">
     <div>
       <h1 style="text-align:center">Make Bookings</h1>
       <form id="getsource" method="post">
         <fieldset>
           <legend>From</legend>
-          <pre>Building <input type="text" id="source_bname"> </pre>
+          <pre>Building <select id="listBuildings"></select></pre>
 		  <pre>Street   <input type="text" id="source_st"> </pre>
 		  <pre>Avenue   <input type="text" id="source_ave"> </pre>
           <input type="button" id="submit" value="Get Destinations" onclick="findReachableDest()">

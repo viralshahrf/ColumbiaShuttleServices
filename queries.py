@@ -1,6 +1,11 @@
 class make_bookings:
     def __init__(self):
-        findDestWhereClause = ""
+        self.findDestWhereClause = ""
+
+    def get_buildings(self, cursor):
+        cursor.execute("Select building_name from Buildings")
+        data = cursor.fetchall()
+        return [str(i[0]) for i in data]
 
     def get_booking(self, cursor, bookingid):
         booking_query = 'SELECT booking_id, uni, schedule_no, source_station, dest_station FROM BookingHistory WHERE Booking_id="' + bookingid + '"'

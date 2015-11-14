@@ -38,9 +38,12 @@ def findbooking(message):
 
 @app.route('/makebookings')
 def makebookings():
-    global bookingFlag
+    global bookingFlag, session
     bookingFlag = 0
-    return render_template('makebookings.html')
+    session = make_bookings()
+    bnames_list = session.get_buildings(cursor)
+    print bnames_list
+    return render_template('makebookings.html', building_list = bnames_list )
 
 @socketio.on('findDest')
 def findDest(message):
@@ -72,7 +75,6 @@ def findSchedule(message):
 @socketio.on('logBooking')
 def logBooking(message):
     global bookingFlag
-    print bookingFlag
     if bookingFlag == 1:
         socketio.emit('foundError', {'error': 'You cannot do multiple bookings! Refresh the page for a new booking.', 'div':'message'})
         return
@@ -95,5 +97,4 @@ if __name__ == '__main__':
     dest = []
     schedule_list = []
     bookingFlag = 0
-    session = make_bookings()
     socketio.run(app)
