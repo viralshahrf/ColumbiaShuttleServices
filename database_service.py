@@ -27,6 +27,7 @@ cursor = conn.cursor()
 
 class ViewBookings:
   qs = view_bookings()
+  bookingid = None
 
 class UpdateSchedule:
   qs = update_schedule()
@@ -60,8 +61,9 @@ def updateschedule():
 
 @socketio.on('findbooking')
 def findbooking(message):
-    bookingid = message['bookingid']
-    data = viewBookingsSession.qs.get_booking(cursor, bookingid)
+    global viewBookingsSession
+    viewBookingsSession.bookingid = message['bookingid']
+    data = viewBookingsSession.qs.get_booking(cursor, viewBookingsSession.bookingid)
     socketio.emit('foundbooking', {'booking': data})
 
 @socketio.on('uniauthorization')
