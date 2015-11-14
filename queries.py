@@ -4,6 +4,47 @@ class view_bookings:
         cursor.execute(booking_query)
         return cursor.fetchone()
 
+class update_schedule:
+    def authorize_uni(self, cursor, uni, line):
+        uni_query = 'SELECT role FROM Staff WHERE uni="' + uni + '" AND line="' + line + '"'
+        cursor.execute(uni_query)
+        return cursor.fetchone()
+
+    def find_line_stations(self, cursor, line):
+        stations_query = 'SELECT stop_no FROM Stations WHERE line="' + line + '" ORDER BY stop_no'
+        cursor.execute(stations_query)
+        return cursor.fetchall()
+
+    def find_line_schedules(self, cursor, line):
+        schedules_query = 'SELECT DISTINCT schedule_no FROM Schedule, Stations WHERE Schedule.stop_id = Stations.stop_id AND line="' + line + '"'
+        cursor.execute(schedules_query)
+        return cursor.fetchall()
+
+    def make_schedule_updates(self, cursor, uni, line, station, schedule, delay):
+        update_query = 'INSERT into ScheduleUpdate'\
+                       '(SELECT "' + uni + '", Stations.stop_id, ' + schedule + ', time, addtime(time, sec_to_time(' + delay + '*60)), now() '\
+                       'FROM Schedule, Stations '\
+                       'WHERE Stations.stop_id=Schedule.stop_id '\
+                       'AND Stations.stop_id=ANY'\
+                       '(SELECT stop_id FROM Stations WHERE line="' + line + '" AND stop_no>=' + station + ') '\
+                       'AND schedule_no=' + schedule + ')'
+        return (cursor.execute(update_query) >= 1)
+
+    def make_schedule_changes(self, cursor, line, station, schedule, delay):
+        changes_query = 'UPDATE Schedule SET time=addtime(time, sec_to_time(' + delay + '*60)) '\
+                        'WHERE stop_id=ANY'\
+                        '(SELECT stop_id FROM Stations WHERE line="' + line + '" AND stop_no>=' + station + ') '\
+                        'AND schedule_no=' + schedule
+        return (cursor.execute(changes_query) >= 1)
+
+    def get_updated_schedule(self, cursor, line, schedule):
+        updated_schedule_query = 'SELECT stop_no, time FROM Schedule, Stations WHERE Schedule.stop_id=Stations.stop_id AND line="' + line + '" AND schedule_no=' + schedule + ' ORDER BY stop_no'
+        cursor.execute(updated_schedule_query)
+        return [[str(i) for i in j] for j in cursor.fetchall()]
+
+    def commit_changes(self, connection):
+        connection.commit()
+
 class make_bookings:
     def __init__(self):
         findDestWhereClause = ""

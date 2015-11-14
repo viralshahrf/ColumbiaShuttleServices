@@ -11,11 +11,210 @@
         socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
 
         socket.on('userauthentication', function(msg) {
+          if (msg.permission) {
+            var Div = document.getElementById('results');
+
+            var cl = Div.childNodes.length;
+            for (c = cl; c > 0; c--) {
+              Div.removeChild(Div.childNodes[c-1]);
+            }
+            socket.emit('getlinestations');
+          }
+          else {
+            var Div = document.getElementById('linestations');
+            while(Div.childNodes.length) {
+              Div.removeChild(Div.childNodes[0]);
+            }
+
+            Div = document.getElementById('results');
+
+            var cl = Div.childNodes.length;
+            for (c = cl; c > 0; c--) {
+              Div.removeChild(Div.childNodes[c-1]);
+            }
+
+            var fs = document.createElement("FIELDSET");
+            var l = document.createElement("LEGEND");
+            l.appendChild(document.createTextNode("Unauthorized User"));
+            fs.appendChild(l);
+
+            fs.appendChild(document.createTextNode("The user is not authorized to perform this update"));
+            Div.appendChild(fs);
+          }
+        });
+
+        socket.on('foundlinestations', function(msg) {
+          displayLineStations(msg);
+        });
+
+        socket.on('scheduleupdateresult', function(msg) {
+          displayScheduleUpdateResult(msg);
         });
       });
 
       function findUNIAuthorization() {
-        socket.emit('uniauthorization', {uni: document.getElementById('uni').value});
+        socket.emit('uniauthorization', {uni: document.getElementById('uni').value, line: document.getElementById('line').value});
+      };
+
+      function displayLineStations(msg) {
+        var stations = msg.stations;
+        var schedules = msg.schedules;
+        var line = msg.line;
+        var Div = document.getElementById('linestations');
+
+        var cl = Div.childNodes.length;
+        for (c = cl; c > 0; c--) {
+          Div.removeChild(Div.childNodes[c-1]);
+        }
+
+        var fs = document.createElement("FIELDSET");
+        var l = document.createElement("LEGEND");
+        l.appendChild(document.createTextNode("Line Stations"));
+        fs.appendChild(l);
+
+        fs.appendChild(document.createTextNode("Please select the station:"));
+
+        var br = document.createElement('br');
+        fs.appendChild(br);
+
+        var select = document.createElement("SELECT");
+        select.setAttribute("id", "stations");
+        select.setAttribute("name", "stations");
+
+        var sl = stations.length;
+        for (s = 0; s < sl; s++) {
+          var option = document.createElement("OPTION");
+          text = line + stations[s][0];
+          option.appendChild(document.createTextNode(text));
+          option.value = stations[s][0];
+          select.appendChild(option);
+        }
+
+        fs.appendChild(select);
+
+        for (i = 0; i < 2; i++) {
+          var br = document.createElement('br');
+          fs.appendChild(br);
+        }
+
+        fs.appendChild(document.createTextNode("Please select the schedule number:"));
+
+        br = document.createElement('br');
+        fs.appendChild(br);
+
+
+        select = document.createElement("SELECT");
+        select.setAttribute("id", "schedules");
+        select.setAttribute("name", "schedules");
+
+        var sl = schedules.length;
+        for (s = 0; s < sl; s++) {
+          var option = document.createElement("OPTION");
+          text = line + "-" +schedules[s][0];
+          option.appendChild(document.createTextNode(text));
+          option.value = schedules[s][0];
+          select.appendChild(option);
+        }
+
+        fs.appendChild(select);
+
+        for (i = 0; i < 2; i++) {
+          var br = document.createElement('br');
+          fs.appendChild(br);
+        }
+
+        fs.appendChild(document.createTextNode("Please enter the delay in arrival time:"));
+
+        br = document.createElement('br');
+        fs.appendChild(br);
+
+        var input = document.createElement("INPUT");
+        input.setAttribute("type", "text");
+        input.setAttribute("id", "delay");
+
+        fs.appendChild(input);
+
+        for (i = 0; i < 2; i++) {
+          var br = document.createElement('br');
+          fs.appendChild(br);
+        }
+
+        var button = document.createElement("BUTTON");
+        button.appendChild(document.createTextNode("Update Arrival"));
+        button.setAttribute("onClick", "updateStationArrival()");
+
+        fs.appendChild(button);
+        Div.appendChild(fs);
+      };
+
+      function updateStationArrival() {
+        socket.emit('updatestationarrival', {station: document.getElementById('stations').value, schedule: document.getElementById('schedules').value, delay: document.getElementById('delay').value});
+      };
+
+      function displayScheduleUpdateResult(msg) {
+        if (msg.error) {
+          var Div = document.getElementById('results');
+
+          var cl = Div.childNodes.length;
+          for (c = cl; c > 0; c--) {
+            Div.removeChild(Div.childNodes[c-1]);
+          }
+
+          var fs = document.createElement("FIELDSET");
+          var l = document.createElement("LEGEND");
+          l.appendChild(document.createTextNode("Schedule Update Failed"));
+          fs.appendChild(l);
+
+          fs.appendChild(document.createTextNode("The attempted schedule update has failed"));
+          Div.appendChild(fs);
+        }
+        else {
+          var schedule = msg.schedule;
+          var Div = document.getElementById('results');
+
+          var cl = Div.childNodes.length;
+          for (c = cl; c > 0; c--) {
+            Div.removeChild(Div.childNodes[c-1]);
+          }
+
+          var fs = document.createElement("FIELDSET");
+          var l = document.createElement("LEGEND");
+          l.appendChild(document.createTextNode("Updated Schedule"));
+          fs.appendChild(l);
+          var table = document.createElement('TABLE');
+          table.border='1';
+
+          var tableBody = document.createElement('TBODY');
+          table.appendChild(tableBody);
+
+          var tr = document.createElement('TR');
+          tableBody.appendChild(tr);
+
+          tableElementNames = ["Stop Number", "Time"];
+          tableElementSizes = [150, 150];
+
+          for (i = 0; i < 2; i++) {
+            var td = document.createElement('TD');
+            td.width=tableElementSizes[i];
+            td.appendChild(document.createTextNode(tableElementNames[i]));
+            tr.appendChild(td);
+          }
+
+          var sl = schedule.length;
+          for (s = 0; s < sl; s++) {
+            var tr = document.createElement("TR");
+            tableBody.appendChild(tr);
+            for (d = 0; d <  2; d++) {
+              var td = document.createElement('TD');
+              td.width=tableElementSizes[d];
+              td.appendChild(document.createTextNode(schedule[s][d]));
+              tr.appendChild(td);
+            }
+          }
+
+          fs.appendChild(table);
+          Div.appendChild(fs);
+        }
       };
     </script>
   </head>
@@ -24,14 +223,23 @@
       <h1 style="text-align:center">Update Schedule</h1>
       <form id="getuni" method="post">
         <fieldset>
-          <legend>Enter UNI</legend>
+          <legend>Enter UNI and Shuttle Line</legend>
           <pre>
             Please enter your UNI:
             <input type="text" id="uni">
-            <input type="button" value="Authorize UNI" onclick="findUNIAuthorization()">
+
+            Please enter the Shuttle Line:
+            <select id='line' name='line'>
+	      <option value='Red'>Red</option>
+	      <option value='Blue'>Blue</option>
+            </select>
+
+            <input type="button" value="Authorize UNI" onClick="findUNIAuthorization()">
           </pre>
         </fieldset>
       </form>
+      <div id="linestations">
+      </div>
     </div>
     <div id="results">
     </div>
