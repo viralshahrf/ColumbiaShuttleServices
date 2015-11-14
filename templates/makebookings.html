@@ -9,6 +9,9 @@
       $(document).ready(function() {
         namespace = '/'; // change to an empty string to use the global namespace
         socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+        socket.on('populateLocation', function(msg) {
+          populateLocation(msg);
+        });
         socket.on('foundDest', function(msg) {
           displayDest(msg);
         });
@@ -22,8 +25,12 @@
 		});
       });
 
+      function populateLocation(msg) {
+        document.getElementById('source_st').value = msg.street;
+        document.getElementById('source_ave').value = msg.avenue;
+      }
+
       function populateBuildings() {
-        window.alert("5");
         var bnames = {{ building_list | safe }};
         var elem = document.getElementById('listBuildings');
         for (i = 0; i < bnames.length; i++)
@@ -216,6 +223,9 @@
         <fieldset>
           <legend>From</legend>
           <pre>Building <select id="listBuildings"></select></pre>
+          <pre>
+                OR
+          </pre>
 		  <pre>Street   <input type="text" id="source_st"> </pre>
 		  <pre>Avenue   <input type="text" id="source_ave"> </pre>
           <input type="button" id="submit" value="Get Destinations" onclick="findReachableDest()">

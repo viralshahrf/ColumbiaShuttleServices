@@ -51,45 +51,76 @@ class make_bookings:
         self.findDestWhereClause = ""
 
     def get_buildings(self, cursor):
-        cursor.execute("Select building_name from Buildings")
+        cursor.execute("SELECT building_name FROM Buildings")
         data = cursor.fetchall()
-        return [str(i[0]) for i in data]
+        return ([''] + [str(i[0]) for i in data])
+    
+    def get_loc_from_bname(self, cursor, bname):
+        query = "SELECT DISTINCT street, avenue FROM Stations, Buildings, ClosestStop "\
+                "WHERE building_name = \"" + bname + "\"" \
+                "AND Stations.stop_id = ClosestStop.stop_id "\
+                "AND ClosestStop.building_id = Buildings.building_id "
+        cursor.execute(query)
+        data = cursor.fetchall()
+        data = [[str(i) for i in j] for j in data]
+        return data[0]
 
     def get_dest(self, cursor, bname, street, avenue):
         bname_clause = " "
         avenue_clause = " "
         if bname:
-            bname_clause = " and Route.source_stop = ANY (select stop_id from ClosestStop where building_id = (Select building_id from Buildings where building_name like \"%" + bname + "%\")) " 
+            bname_clause = " AND Route.source_stop = "\
+                           " ANY (SELECT stop_id FROM ClosestStop"\
+                           " WHERE building_id = (SELECT building_id FROM Buildings "\
+                           " WHERE building_name like \"%" + bname + "%\")) " 
         if avenue:
-            avenue_clause = " and (avenue like \"%" + avenue + "%\") "
+            avenue_clause = " AND (avenue like \"%" + avenue + "%\") "
         
-        self.findDestWhereClause = " where source_stop = ANY(select stop_id from Stations where street = \"" + street + "\"" + avenue_clause + ") " + bname_clause
+        self.findDestWhereClause = " WHERE source_stop = "\
+                       " ANY(SELECT stop_id FROM Stations "\
+                       " WHERE street = \"" + street + "\"" + avenue_clause + ") "\
+                        + bname_clause
 
-        findDestQuery = "Select distinct S.street, S.avenue from Route, Stations S " + self.findDestWhereClause + "and S.stop_id = dest_stop"         
+        findDestQuery = "SELECT distinct S.street, S.avenue "\
+                        "FROM Route, Stations S " + self.findDestWhereClause + \
+                        "AND S.stop_id = dest_stop"         
         cursor.execute(findDestQuery)
         data = cursor.fetchall()
         return [[str(i) for i in j] for j in data]
 
     def get_schedule(self, cursor, source, dest_st, dest_ave):
-        findAllSources = "ANY(select source_stop from Route, Stations S " + self.findDestWhereClause + ")"
-        findAllStopids = "ANY(select stop_id from Stations where street = " + str(dest_st) + " and avenue = \"" + dest_ave +"\")"
-        findScQuery = "select S.line, src.stop_id, dst.stop_id, src.schedule_no, S.street, S.avenue, src.time, timediff(dst.time,src.time) as JourneyTime from Schedule src, Schedule dst, Stations S where S.stop_id = src.stop_id and S.line = (select line from Stations where stop_id = dst.stop_id) and (dst.stop_id = " + findAllStopids + ") and (src.stop_id = " + findAllSources + ") and (src.schedule_no = dst.schedule_no) and abs(timediff(dst.time, src.time)) > time(000000) order by src.time" 
+        findAllSources = "ANY(SELECT source_stop FROM Route, Stations S "\
+                          + self.findDestWhereClause + ")"
+        findAllDests = "ANY(SELECT stop_id FROM Stations "\
+                         "WHERE street = " + str(dest_st) + " AND avenue = \"" + dest_ave +"\")"
+        findScQuery = "SELECT S.line, src.stop_id, dst.stop_id, src.schedule_no, S.street, "\
+                      "S.avenue, src.time, timediff(dst.time,src.time) AS JourneyTime "\
+                      "FROM Schedule src, Schedule dst, Stations S "\
+                      "WHERE S.stop_id = src.stop_id "\
+                      "AND S.line = (SELECT line FROM Stations WHERE stop_id = dst.stop_id) "\
+                      "AND (dst.stop_id = " + findAllDests + ") "\
+                      "AND (src.stop_id = " + findAllSources + ") "\
+                      "AND (src.schedule_no = dst.schedule_no) "\
+                      "AND abs(timediff(dst.time, src.time)) > time(000000) order by src.time" 
         cursor.execute(findScQuery)
         data = cursor.fetchall()
         return [[str(i) for i in j] for j in data]
 
     def registerBooking(self, cursor, uni, schedule):
-        cursor.execute("select 1 from Members where uni = \"" + uni + "\"")
-        result =  cursor.fetchall()
-        if len(result) <= 0:
+        schedule_no = schedule[3]
+        source = schedule[1]
+        dest = schedule[2]        
+        cursor.execute("SELECT 1 FROM Members WHERE uni = \"" + uni + "\"")
+        result =  cursor.fetchone()
+        if result == None:
             return [result, -1]
-        if int(result[0][0]) != 1:
-            return [int(result[0][0]), -1]
-        cursor.execute("select max(booking_id) from BookingHistory")
+        cursor.execute("SELECT max(booking_id) FROM BookingHistory")
         curBookingID = int(cursor.fetchone()[0]) + 1
-        insertQuery = "insert into BookingHistory values(" + str(curBookingID) + ", now(), \"" + uni + "\", " + schedule[3] + ", \"" + schedule[1] + "\", \"" + schedule[2] + "\")"
+
+        insertQuery = "insert into BookingHistory values("\
+                    + str(curBookingID) + ", now(), \"" + uni + "\", "\
+                    + schedule_no + ", \"" + source + "\", \"" + dest + "\")"
         rowcnt = cursor.execute(insertQuery)
-        print "rowcnt = ", rowcnt
         if rowcnt == 1:
             return [curBookingID, 1]
         else:
