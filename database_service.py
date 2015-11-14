@@ -4,7 +4,7 @@ import sys
 from flask import Flask, render_template
 from flask.ext.mysql import MySQL
 from flask.ext.socketio import SocketIO, emit
-from queries import make_bookings
+from queries import make_bookings, view_bookings, update_schedule
 
 app = Flask('ColumbiaShuttleServices')
 app.config['DEBUG'] = True
@@ -16,11 +16,26 @@ app.config['MYSQL_DATABASE_HOST'] = 'shuttle.cfs9lab4dyj4.us-west-2.rds.amazonaw
 app.config['MYSQL_DATABASE_PORT'] = 3306
 
 socketio = SocketIO(app)
+viewBookingsSession = None
+makeBookingsSession = None
+updateScheduleSession = None
 
 mysql = MySQL()
 mysql.init_app(app)
 conn = mysql.connect()
 cursor = conn.cursor()
+
+class ViewBookings:
+  qs = view_bookings()
+  bookingid = None
+
+class UpdateSchedule:
+  qs = update_schedule()
+  uni = None
+  line = None
+  station = None
+  schedule = None
+  delay = None
 
 @app.route('/index')
 def index():
@@ -28,13 +43,9 @@ def index():
 
 @app.route('/viewbookings')
 def viewbookings():
+    global viewBookingsSession
+    viewBookingsSession = ViewBookings()
     return render_template('viewbookings.html')
-
-@socketio.on('findbooking')
-def findbooking(message):
-    bookingid = message['bookingid']
-    data = get_booking(cursor, bookingid)
-    socketio.emit('foundbooking', {'booking': data})
 
 @app.route('/makebookings')
 def makebookings():
@@ -44,6 +55,51 @@ def makebookings():
     bnames_list = session.get_buildings(cursor)
     print bnames_list
     return render_template('makebookings.html', building_list = bnames_list )
+
+@app.route('/updateschedule')
+def updateschedule():
+    global updateScheduleSession
+    updateScheduleSession = UpdateSchedule()
+    return render_template('updateschedule.html')
+
+@socketio.on('findbooking')
+def findbooking(message):
+    global viewBookingsSession
+    viewBookingsSession.bookingid = message['bookingid']
+    data = viewBookingsSession.qs.get_booking(cursor, viewBookingsSession.bookingid)
+    socketio.emit('foundbooking', {'booking': data})
+
+@socketio.on('uniauthorization')
+def authorizeuni(message):
+    global updateScheduleSession
+    updateScheduleSession.uni = message['uni']
+    updateScheduleSession.line = message['line']
+    data = updateScheduleSession.qs.authorize_uni(cursor, updateScheduleSession.uni, updateScheduleSession.line)
+    socketio.emit('userauthentication', {'permission': data})
+
+@socketio.on('getlinestations')
+def findlinestations():
+    global updateScheduleSession
+    data1 = updateScheduleSession.qs.find_line_stations(cursor, updateScheduleSession.line)
+    data2 = updateScheduleSession.qs.find_line_schedules(cursor, updateScheduleSession.line)
+    socketio.emit('foundlinestations', {'stations': data1, "schedules": data2, "line": updateScheduleSession.line})
+
+@socketio.on('updatestationarrival')
+def updatearrival(message):
+    global updateScheduleSession
+    updateScheduleSession.station = message['station']
+    updateScheduleSession.schedule = message['schedule']
+    updateScheduleSession.delay = message['delay']
+    status = updateScheduleSession.qs.make_schedule_updates(cursor, updateScheduleSession.uni, updateScheduleSession.line, updateScheduleSession.station, updateScheduleSession.schedule,\
+    updateScheduleSession.delay)
+    if (status):
+      status = updateScheduleSession.qs.make_schedule_changes(cursor, updateScheduleSession.line, updateScheduleSession.station, updateScheduleSession.schedule, updateScheduleSession.delay)
+      if (status):
+        updateScheduleSession.qs.commit_changes(conn)
+        data = updateScheduleSession.qs.get_updated_schedule(cursor, updateScheduleSession.line, updateScheduleSession.schedule)
+        socketio.emit('scheduleupdateresult', {'schedule': data, 'error': 0})
+      else:
+        socketio.emit('scheduleupdateresult', {'schedule': None, 'error': 1})
 
 @socketio.on('findDest')
 def findDest(message):
